@@ -93,7 +93,7 @@ def generate_frames():
         return noBackground
 
     
-    model = load_model('improved_model6.h5')
+    model = load_model('../models/improved_model6.h5')
     model_shape = 96
     cap_width = 960
     cap_height = 720
