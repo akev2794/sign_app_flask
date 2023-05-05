@@ -1,1 +1,8 @@
 raw_data/
+.env
+.ipynb_checkpoints/
+__pycache__/
+models/
+processed_videos/
+cloud_videos/
+.DS_Store
