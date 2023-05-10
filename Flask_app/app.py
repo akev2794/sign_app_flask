@@ -92,6 +92,19 @@ def generate_frames():
         selfie_segmentation.close()
         return noBackground
 
+    def print_prob(predict, letters, debug_image):
+
+        colours = [(0, 244, 127),
+                    (250, 176, 55),
+                    (223, 198, 106),
+                    (208, 157, 74),
+                    (78, 174, 107)]
+        output_frame = debug_image.copy()
+        for num, prob in enumerate(predict):
+            cv2.rectangle(output_frame, (0,60+num*40), (int(prob*100), 90+num*40), colours[num], -1)
+            cv2.putText(output_frame, letters[num], (0, 85+num*40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2, cv2.LINE_AA)
+        return output_frame
+
     
     model = load_model('../models/improved_model6.h5')
     model_shape = 96
@@ -143,12 +156,16 @@ def generate_frames():
         predict = None
         prediction = None
         proba = None
+        list_of_predictions = []
         if cropped_image.shape == (1, model_shape, model_shape, 3):
-            predict = model.predict(cropped_image)
-            prediction = np.argmax(predict[0], axis = -1)
-            proba = max(predict[0])
-            cv2.putText(debug_image, f"Prediction: {prediction_list[prediction]}, p_value = {proba}", (10, 30),
-                   cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2, cv2.LINE_AA)
+            predict = model.predict(cropped_image)[0]
+            list_of_predictions.append(predict)
+            if len(list_of_predictions) > 5:
+                del list_of_predictions[0]
+            predict_mean = np.mean(np.array(list_of_predictions), axis = 0)
+            top3 = np.argsort(predict_mean)[-3:]
+            top3 = list(reversed(top3))
+            debug_image = print_prob([predict_mean[i] for i in top3], [prediction_list[i] for i in top3], debug_image)
 
         # encode the image into JPEG format
         ret, buffer = cv2.imencode('.jpg', debug_image)
@@ -159,10 +176,16 @@ def generate_frames():
 
     cap.release()
 
+
 @app.route('/')
+def home():
+    return render_template('home.html')
+
+
+@app.route('/video_app')
 def index():
     """Video streaming home page."""
-    return render_template('index.html')
+    return render_template('video.html')
 
 
 @app.route('/video_feed')
